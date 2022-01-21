@@ -1,3 +1,4 @@
+import copy
 import itertools
 import random
 import re
@@ -44,9 +45,9 @@ class Catalog:
 
 class Game:
     def __init__(self, catalog):
-        self._secret_word = catalog[random.randint(0, len(catalog))]
+        self._secret_word = random.choice(catalog.get_words())
 
-    def guess(self, guess) -> List[Result]:
+    def check(self, guess) -> List[Result]:
         word = list(self._secret_word)
         guess = list(guess)
 
@@ -102,22 +103,21 @@ class Constraint:
 
 
 class Suggester:
-    """Tracks results and suggest next guess"""
+    """Tracks results and suggests next guess"""
 
     def __init__(self):
         self._word_length = 5
 
         self._catalog = Catalog()
-        self._constraint_table = {}
+        self._constraints = {}
 
     def _update_results(self, results):
-        # Process one batch at a time, one unique letter at a time.
+        # create a new letter constraint non-existent, then update all constraints
+        for r in results:
+            if r.Letter not in self._constraints.keys():
+                self._constraints[r.Letter] = Constraint(r.Letter)
 
-        for result in results:
-            if result.Letter not in self._constraint_table.keys():
-                self._constraint_table[result.Letter] = Constraint(result.Letter)
-
-        for constraint in self._constraint_table.values():
+        for constraint in self._constraints.values():
             constraint.update(results)
 
     def _create_regexes(self):
@@ -125,18 +125,18 @@ class Suggester:
         base_regex = [""] * self._word_length
 
         wrong_letters = [
-            l for l, c in self._constraint_table.items() if c.min_occurences == 0
+            l for l, c in self._constraints.items() if c.min_occurences == 0
         ]
         wrong_letters_string = "[^" + "".join(wrong_letters) + "]"
 
-        for letter, constraint in self._constraint_table.items():
+        for letter, constraint in self._constraints.items():
             for i in constraint.known_indexes:
                 base_regex[i] = letter
 
-        # Aggregate misplace letters and possible indexes
+        # Aggregate misplaced letters and possible indexes
         letters = []
         indexes = []
-        for c in self._constraint_table.values():
+        for c in self._constraints.values():
             for i in range(c.min_occurences - len(c.known_indexes)):
                 letters.append(c.letter)
                 indexes.append(c.possible_indexes)
@@ -160,8 +160,9 @@ class Suggester:
         regexes = self._create_regexes()
         self._catalog.filter_by_regexes(regexes)
 
-    def suggest(self, guess):
-        self._update_results(guess)
+    def process(self, result):
+        self._update_results(result)
         self._reduce_word_catalog()
 
+    def suggest(self):
         return random.choice(self._catalog.get_words())
