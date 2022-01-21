@@ -6,6 +6,7 @@ import re
 from collections import Counter
 from enum import IntEnum
 from typing import List, NamedTuple
+from re import Pattern
 
 
 class Status(IntEnum):
@@ -42,7 +43,7 @@ class Catalog:
         match_indexes = []
         for i in check_indexes:
             word = self._words[i]
-            if any([re.match(r, word) is not None for r in regexes]):
+            if any([r.match(word) is not None for r in regexes]):
                 match_indexes.append(i)
 
         return match_indexes
@@ -164,7 +165,7 @@ class Suggester:
                     if l == "":
                         regex[i] = wrong_letters_string
                 regex_str = "^" + "".join(regex) + "$"
-                regexes.append(regex_str)
+                regexes.append(re.compile(regex_str))
 
         return regexes
 
@@ -175,7 +176,6 @@ class Suggester:
     def process(self, result):
         self._update_results(result)
         self._reduce_word_catalog()
-        print(self._word_indexes)
 
     def suggest(self):
         # Assume remaining words that have a lot of letters will give more information. Count the
