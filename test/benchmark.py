@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
+import cProfile
+import copy
 import re
 
 from words import Catalog, Game, Result, Status, Suggester
 
-NUM_GAMES = 100
+catalog = Catalog()
 
-if __name__ == "__main__":
-    catalog = Catalog()
-    game_summaries = []
 
-    for i in range(NUM_GAMES):
+def run():
+    for i in range(10):
         game = Game(catalog)
-        suggester = Suggester()
+        suggester = Suggester(catalog)
 
         num_guesses = 0
         while True:
@@ -20,10 +20,11 @@ if __name__ == "__main__":
             result = game.check(guess)
 
             if all([r.Status == Status.RIGHT for r in result]):
-                game_summaries.append(num_guesses)
                 print(f"Word: {game._secret_word}\tResult: {guess}")
                 break
             else:
                 suggester.process(result)
 
-        print(sum(game_summaries) / NUM_GAMES)
+
+if __name__ == "__main__":
+    cProfile.run("run()", sort="cumtime")
