@@ -3,6 +3,7 @@ import itertools
 import random
 import re
 
+from collections import Counter
 from enum import IntEnum
 from typing import List, NamedTuple
 
@@ -83,6 +84,7 @@ class Constraint:
     def __init__(self, letter, size=5):
         self.letter = letter
         self.min_occurences = 0
+        self.max_known = False
 
         self.known_indexes = set()
         self.possible_indexes = set(list(range(size)))
@@ -95,6 +97,9 @@ class Constraint:
         occurences = len([r for r in match_results if r.Status in (Status.RIGHT, Status.MISPLACED)])
 
         self.min_occurences = max(occurences, self.min_occurences)
+
+        if Status.WRONG in [r.Status for r in match_results]:
+            self.max_known = True
 
         for r in match_results:
             if r.Status == Status.RIGHT:
@@ -133,7 +138,7 @@ class Suggester:
         """Create a list of regular expressions"""
         base_regex = [""] * self._word_length
 
-        wrong_letters = [l for l, c in self._constraints.items() if c.min_occurences == 0]
+        wrong_letters = [l for l, c in self._constraints.items() if c.max_known]
         wrong_letters_string = "[^" + "".join(wrong_letters) + "]"
 
         for letter, constraint in self._constraints.items():
@@ -161,6 +166,8 @@ class Suggester:
                 regex_str = "^" + "".join(regex) + "$"
                 regexes.append(regex_str)
 
+        print(regexes)
+
         return regexes
 
     def _reduce_word_catalog(self):
@@ -170,7 +177,26 @@ class Suggester:
     def process(self, result):
         self._update_results(result)
         self._reduce_word_catalog()
+        print(self._word_indexes)
 
     def suggest(self):
-        random_word_index = random.choice(self._word_indexes)
-        return self._catalog.get_words()[random_word_index]
+	# Assume remaining words that have a lot of letters will give more information. Count the
+	# number of each letter in each word. Determine the maximum number of letters in any word,
+	# and the score those words based on how common each letter is across all words.
+        words = [self._catalog.get_words()[i] for i in self._word_indexes]
+        letter_counts = Counter("".join(words))
+
+        unique_letter_counts = [len(set(word)) for word in words]
+        max_unique_letters = max(unique_letter_counts)
+
+        top_word = ""
+        top_word_score = 0
+        for word, ulc in zip(words, unique_letter_counts):
+            if ulc == max_unique_letters:
+                letter_count = Counter(word)
+                word_score = sum([letter_counts[l] for l in letter_count.keys()])
+                if word_score > top_word_score:
+                    top_word = word
+                    top_word_score = word_score
+
+        return top_word

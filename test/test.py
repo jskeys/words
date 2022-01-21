@@ -6,7 +6,8 @@ from words import Catalog, Game, Result, Status, Suggester
 status_map = {"=": Status.RIGHT, "x": Status.WRONG, "?": Status.MISPLACED}
 
 if __name__ == "__main__":
-    suggester = Suggester()
+    catalog = Catalog()
+    suggester = Suggester(catalog)
 
     while True:
         guess = input("Guess:  ")
@@ -21,5 +22,8 @@ if __name__ == "__main__":
         for i, (l, s) in enumerate(zip(guess, check)):
             results.append(Result(l, i, status_map[s]))
 
-        print(suggester.suggest(results))
-        print(len(suggester._catalog.get_words()))
+        suggester.process(results)
+        print("Try ", end="")
+        print(suggester.suggest(), end=", ")
+        print(len(suggester._word_indexes), end="")
+        print(" words remain")
