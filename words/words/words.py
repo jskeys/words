@@ -166,8 +166,6 @@ class Suggester:
                 regex_str = "^" + "".join(regex) + "$"
                 regexes.append(regex_str)
 
-        print(regexes)
-
         return regexes
 
     def _reduce_word_catalog(self):
@@ -180,9 +178,9 @@ class Suggester:
         print(self._word_indexes)
 
     def suggest(self):
-	# Assume remaining words that have a lot of letters will give more information. Count the
-	# number of each letter in each word. Determine the maximum number of letters in any word,
-	# and the score those words based on how common each letter is across all words.
+        # Assume remaining words that have a lot of letters will give more information. Count the
+        # number of each letter in each word. Determine the maximum number of letters in any word,
+        # and the score those words based on how common each letter is across all words.
         words = [self._catalog.get_words()[i] for i in self._word_indexes]
         letter_counts = Counter("".join(words))
 

@@ -9,6 +9,7 @@ from words import Catalog, Game, Result, Status, Suggester
 catalog = Catalog()
 num_runs = 100
 
+
 def run(num_runs):
     guess_history = []
     for i in range(num_runs):
@@ -28,6 +29,7 @@ def run(num_runs):
                 suggester.process(result)
 
     return guess_history
+
 
 if __name__ == "__main__":
     result = run(num_runs)
