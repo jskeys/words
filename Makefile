@@ -5,7 +5,7 @@ install:
 	python3 -m pip install dist/*.whl
 
 format:
-	python3 -m black words
+	python3 -m black . -l 100
 
 setup:
 	python3 -m pip install -r requirements.txt
